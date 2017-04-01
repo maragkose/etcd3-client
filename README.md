@@ -1,7 +1,7 @@
 # etcd3-client
 Thin cpp wrapper for etc v3 cpp api
 
-==Cuurrently under development.==
+==Currently under development.==
 
 Generated files are currently hard commited in the repo. 
 Compile:
