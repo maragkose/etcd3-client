@@ -96,12 +96,15 @@ set (H_FILES ${H_FILES}   "${CMAKE_CURRENT_BINARY_DIR}/gogoproto/gogo.pb.h")
 set_source_files_properties(${CC_FILES} PROPERTIES GENERATED TRUE)
 set_source_files_properties(${H_FILES} PROPERTIES GENERATED TRUE)
 
-include_directories(${CMAKE_CURRENT_BINARY_DIR})
+include_directories(${CMAKE_CURRENT_BINARY_DIR} 
+                    ${CMAKE_CURRENT_SOURCE_DIR}/src/)
 
-add_executable(client ${CC_FILES} ${H_FILES} src/Client.cpp)
-target_link_libraries(client grpc++ ${PROTOBUF_LIBRARY})
+add_library(etcd3cppapi SHARED ${CC_FILES} ${H_FILES} src/Client.cpp)
+target_link_libraries(etcd3cppapi grpc++ ${PROTOBUF_LIBRARY})
+add_dependencies(etcd3cppapi generatecode)
 
-add_dependencies(client generatecode)
+add_executable(etcd3client ${CC_FILES} ${H_FILES} tst/etcd3client.cpp)
+target_link_libraries(etcd3client etcd3cppapi)
 
 
 
