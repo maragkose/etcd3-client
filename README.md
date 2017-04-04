@@ -6,7 +6,7 @@ Thin cpp wrapper for etc v3 cpp api
 <br/>
 Compile:<br/>
 <code>
-mkdir build
-cmake ../
-make
+mkdir build <br/>
+cmake ../   <br/>
+make        <br/>
 </code>
