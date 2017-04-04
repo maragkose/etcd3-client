@@ -3,6 +3,8 @@ cmake_minimum_required(VERSION 3.5)
 include (ExternalProject)
 include(FindProtobuf)
 
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -std=c++11")
+
 ExternalProject_Add(
 etcd
 GIT_REPOSITORY "https://github.com/coreos/etcd.git"
@@ -64,6 +66,7 @@ DEPENDS etcd googleapis protobuf
 add_custom_target (generatecode 
   COMMENT "Generating source code from proto files..." 
   COMMAND  protoc -I. --cpp_out=${CMAKE_CURRENT_BINARY_DIR} --plugin=`which grpc_cpp_plugin` rpc.proto 
+  COMMAND  protoc -I. --grpc_out=${CMAKE_CURRENT_BINARY_DIR} --plugin=protoc-gen-grpc=`which grpc_cpp_plugin` rpc.proto 
   COMMAND  protoc -I. --cpp_out=${CMAKE_CURRENT_BINARY_DIR} --plugin=`which grpc_cpp_plugin` etcd/auth/authpb/auth.proto 
   COMMAND  protoc -I. --cpp_out=${CMAKE_CURRENT_BINARY_DIR} --plugin=`which grpc_cpp_plugin` etcd/mvcc/mvccpb/kv.proto 
   COMMAND  protoc -I. --cpp_out=${CMAKE_CURRENT_BINARY_DIR} --plugin=`which grpc_cpp_plugin` google/api/annotations.proto 
@@ -75,6 +78,8 @@ add_custom_target (generatecode
 
 set (CC_FILES ${CC_FILES} "${CMAKE_CURRENT_BINARY_DIR}/rpc.pb.cc")
 set (H_FILES ${H_FILES}   "${CMAKE_CURRENT_BINARY_DIR}/rpc.pb.h")
+set (CC_FILES ${CC_FILES} "${CMAKE_CURRENT_BINARY_DIR}/rpc.grpc.pb.cc")
+set (H_FILES ${H_FILES}   "${CMAKE_CURRENT_BINARY_DIR}/rpc.grpc.pb.h")
 set (CC_FILES ${CC_FILES} "${CMAKE_CURRENT_BINARY_DIR}/etcd/auth/authpb/auth.pb.cc")
 set (H_FILES ${H_FILES}   "${CMAKE_CURRENT_BINARY_DIR}/etcd/auth/authpb/auth.pb.h")
 set (CC_FILES ${CC_FILES} "${CMAKE_CURRENT_BINARY_DIR}/etcd/mvcc/mvccpb/kv.pb.cc")
@@ -93,7 +98,7 @@ set_source_files_properties(${H_FILES} PROPERTIES GENERATED TRUE)
 
 include_directories(${CMAKE_CURRENT_BINARY_DIR})
 
-add_executable(client ${CC_FILES} ${H_FILES} client.cc)
+add_executable(client ${CC_FILES} ${H_FILES} src/Client.cpp)
 target_link_libraries(client grpc++ ${PROTOBUF_LIBRARY})
 
 add_dependencies(client generatecode)
