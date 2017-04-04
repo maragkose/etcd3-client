@@ -3,10 +3,12 @@ Thin cpp wrapper for etc v3 cpp api
 
 ==Currently under development.==
 
-<br/>
+<p>
 Compile:<br/>
-<code>
+</p>
+<p>
 mkdir build <br/>
 cmake ../   <br/>
 make        <br/>
-</code>
+</p>
+
