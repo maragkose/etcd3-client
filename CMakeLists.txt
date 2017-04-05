@@ -6,9 +6,9 @@ set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake")
 
 include (ExternalProject)
 include(FindProtobuf)
-include(FindGRPC++)
+#include(FindGRPC++)
 
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -std=c++11")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -g -ggdb -std=c++11")
 set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 
 ExternalProject_Add(
@@ -73,14 +73,14 @@ DEPENDS etcd googleapis protobuf
 
 add_custom_target (generatecode 
   COMMENT "Generating source code from proto files..." 
-  COMMAND  ${Protobuf_PROTOC_EXECUTABLE} -I. --cpp_out=${CMAKE_CURRENT_BINARY_DIR} --plugin=`which grpc_cpp_plugin` rpc.proto 
-  COMMAND  ${Protobuf_PROTOC_EXECUTABLE} -I. --grpc_out=${CMAKE_CURRENT_BINARY_DIR} --plugin=protoc-gen-grpc=`which grpc_cpp_plugin` rpc.proto 
-  COMMAND  ${Protobuf_PROTOC_EXECUTABLE} -I. --cpp_out=${CMAKE_CURRENT_BINARY_DIR} --plugin=`which grpc_cpp_plugin` etcd/auth/authpb/auth.proto 
-  COMMAND  ${Protobuf_PROTOC_EXECUTABLE} -I. --cpp_out=${CMAKE_CURRENT_BINARY_DIR} --plugin=`which grpc_cpp_plugin` etcd/mvcc/mvccpb/kv.proto 
-  COMMAND  ${Protobuf_PROTOC_EXECUTABLE} -I. --cpp_out=${CMAKE_CURRENT_BINARY_DIR} --plugin=`which grpc_cpp_plugin` google/api/annotations.proto 
-  COMMAND  ${Protobuf_PROTOC_EXECUTABLE} -I. --cpp_out=${CMAKE_CURRENT_BINARY_DIR} --plugin=`which grpc_cpp_plugin` google/api/http.proto
-  COMMAND  ${Protobuf_PROTOC_EXECUTABLE} -I. --cpp_out=${CMAKE_CURRENT_BINARY_DIR} --plugin=`which grpc_cpp_plugin` google/protobuf/descriptor.proto
-  COMMAND  ${Protobuf_PROTOC_EXECUTABLE} -I. --cpp_out=${CMAKE_CURRENT_BINARY_DIR} --plugin=`which grpc_cpp_plugin` gogoproto/gogo.proto
+  COMMAND  ${PROTOBUF_PROTOC_EXECUTABLE} -I. --cpp_out=${CMAKE_CURRENT_BINARY_DIR} --plugin=`which grpc_cpp_plugin` rpc.proto 
+  COMMAND  ${PROTOBUF_PROTOC_EXECUTABLE} -I. --grpc_out=${CMAKE_CURRENT_BINARY_DIR} --plugin=protoc-gen-grpc=`which grpc_cpp_plugin` rpc.proto 
+  COMMAND  ${PROTOBUF_PROTOC_EXECUTABLE} -I. --cpp_out=${CMAKE_CURRENT_BINARY_DIR} --plugin=`which grpc_cpp_plugin` etcd/auth/authpb/auth.proto 
+  COMMAND  ${PROTOBUF_PROTOC_EXECUTABLE} -I. --cpp_out=${CMAKE_CURRENT_BINARY_DIR} --plugin=`which grpc_cpp_plugin` etcd/mvcc/mvccpb/kv.proto 
+  COMMAND  ${PROTOBUF_PROTOC_EXECUTABLE} -I. --cpp_out=${CMAKE_CURRENT_BINARY_DIR} --plugin=`which grpc_cpp_plugin` google/api/annotations.proto 
+  COMMAND  ${PROTOBUF_PROTOC_EXECUTABLE} -I. --cpp_out=${CMAKE_CURRENT_BINARY_DIR} --plugin=`which grpc_cpp_plugin` google/api/http.proto
+  COMMAND  ${PROTOBUF_PROTOC_EXECUTABLE} -I. --cpp_out=${CMAKE_CURRENT_BINARY_DIR} --plugin=`which grpc_cpp_plugin` google/protobuf/descriptor.proto
+  COMMAND  ${PROTOBUF_PROTOC_EXECUTABLE} -I. --cpp_out=${CMAKE_CURRENT_BINARY_DIR} --plugin=`which grpc_cpp_plugin` gogoproto/gogo.proto
   DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/generated-stamp
 )
 

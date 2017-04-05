@@ -5,11 +5,14 @@ int main() {
 
     Client oClient("localhost:2379");
 
+    std::pair <std::string, std::string> pair;
+    
     oClient.put("Hallo", "etcd!!");
     oClient.put("foo1", "bar1");
     oClient.put("foo2", "bar2");
     oClient.put("foo3", "bar3");
-    
+    oClient.put("foo3", "bar3", pair);
+    std::cout << "foo3 previous[key:value]: "<< pair.first << ":"<< pair.second << std::endl; 
     std::cout << oClient.get("Hallo") <<std::endl;
    
      std::map<std::string, std::string>  res1, res2;
