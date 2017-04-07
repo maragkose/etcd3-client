@@ -31,4 +31,5 @@ int main() {
     for(auto item: res3){ std::cout << item << std::endl; }
     std::cout << "===================================="<<std::endl; 
 
+    oClient.watch("foo");
 }

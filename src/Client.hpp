@@ -15,7 +15,12 @@ using etcdserverpb::PutRequest;
 using etcdserverpb::PutResponse;
 using etcdserverpb::RangeRequest;
 using etcdserverpb::RangeResponse;
+using etcdserverpb::WatchRequest;
+using etcdserverpb::WatchCreateRequest;
+using etcdserverpb::WatchResponse;
 using grpc::Status;
+using grpc::CompletionQueue;
+using grpc::ClientAsyncReaderWriter;
 
 //--------------------------------------------------
 class Client {
@@ -149,8 +154,23 @@ public:
         }
 
         return getStatus;
+    }
+    
+    void watch(const std::string key) {
+        
+        ClientContext context;
+        WatchRequest watchRequest;
+        CompletionQueue cq_;
+    
+        WatchResponse watchResponse;
 
+        watchRequest.mutable_create_request()->set_key(key);
+        auto stream = m_watchStub->Watch(&context);
 
+        stream->Write(watchRequest);
+        stream->Read(&watchResponse);
+
+        stream->Read(&watchResponse);
 
     }
 
