@@ -31,5 +31,11 @@ int main() {
     for(auto item: res3){ std::cout << item << std::endl; }
     std::cout << "===================================="<<std::endl; 
 
-    oClient.watch("foo");
+    oClient.watch("foo", 
+        [](auto event){ std::cout << "Rcvd:" << event.type()  << ":" 
+                                                              << event.kv().key() << "-"
+                                                              << event.kv().value() 
+                                                              << std::endl;
+       } 
+    );
 }

@@ -155,8 +155,9 @@ public:
 
         return getStatus;
     }
-    
-    void watch(const std::string key) {
+   
+    template <typename T> 
+    void watch(const std::string key, T callback) {
         
         ClientContext context;
         WatchRequest watchRequest;
@@ -169,9 +170,22 @@ public:
 
         stream->Write(watchRequest);
         stream->Read(&watchResponse);
+    
+        while(true){
 
-        stream->Read(&watchResponse);
+            bool op = stream->Read(&watchResponse);
 
+            // event is of type:  mvccpb::Event
+            for(auto event: watchResponse.events()){
+                std::cerr << "Reveived watch_response event.type() = "<< event.type() << std::endl;
+                callback(event);
+            }
+
+            if(!op){
+                std::cerr << "Lost connection with stream..."<< std::endl;
+                break;
+            }
+        }
     }
 
 private:
