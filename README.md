@@ -6,9 +6,9 @@ Generation and compilation of the api library is done using cmake.
 
 <p>currently under development.</p>
 
-several get calls are supported 
-several put calls are supported 
-watch calls are supported 
++several get calls are supported <br/>
++several put calls are supported <br/>
++watch calls are supported <br/>
 
 <p>
 Compile:<br/>
