@@ -18,6 +18,8 @@ using etcdserverpb::RangeResponse;
 using etcdserverpb::WatchRequest;
 using etcdserverpb::WatchCreateRequest;
 using etcdserverpb::WatchResponse;
+using etcdserverpb::TxnRequest;
+using etcdserverpb::TxnResponse;
 using grpc::Status;
 using grpc::CompletionQueue;
 using grpc::ClientAsyncReaderWriter;
@@ -186,6 +188,38 @@ public:
                 break;
             }
         }
+    }
+
+    Status txn(const std::string key, const std::string value) {
+        
+        ClientContext context;
+        TxnRequest txnRequest;
+        TxnResponse txnResponse;
+
+        //  RangeRequest getRequest;
+        std::unique_ptr<RangeRequest> getRequest(new RangeRequest());
+ 
+        // add compare object to Txn
+        auto compare = txnRequest.add_compare();
+        compare->set_result(etcdserverpb::Compare_CompareResult_EQUAL); 
+        compare->set_target(etcdserverpb::Compare_CompareTarget_VALUE);
+        compare->set_key(key);
+        compare->set_value(value);
+       
+        //add success object to Txn 
+        auto success = txnRequest.add_success();
+
+        getRequest->set_key(key);
+        success->set_allocated_request_range(getRequest.release());
+        Status getStatus = m_kvStub->Txn(&context, txnRequest , &txnResponse);
+     
+        for(auto resp: txnResponse.responses()){
+            for(auto kvs_items: resp.response_range().kvs()){
+                std::cerr << kvs_items.key() << 
+                      ":" << kvs_items.value() << std::endl;
+            }                
+        }
+        return getStatus;
     }
 
 private:

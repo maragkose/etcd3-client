@@ -31,6 +31,13 @@ int main() {
     for(auto item: res3){ std::cout << item << std::endl; }
     std::cout << "===================================="<<std::endl; 
 
+    Status s = oClient.txn("foo", "There8");
+    if(s.ok()){
+        std::cerr << s.error_code() << ":" << s.error_message() << std::endl;
+    } else {
+        std::cerr << s.error_code() << ":" << s.error_message() << std::endl;
+    }
+
     oClient.watch("foo", 
         [](auto event){ std::cout << "Rcvd:" << event.type()  << ":" 
                                                               << event.kv().key() << "-"
@@ -38,4 +45,5 @@ int main() {
                                                               << std::endl;
        } 
     );
+
 }
