@@ -26,9 +26,9 @@ using grpc::Status;
 using grpc::CompletionQueue;
 using grpc::ClientAsyncReaderWriter;
 
-//--------------------------------------------------
+//-------------
 class Client {
-//--------------------------------------------------
+//-------------
 
 public:
 
@@ -191,102 +191,80 @@ public:
             }
         }
     }
-
-    Status txn(const std::string key, const std::string value) {
+   
+    template <typename Tc, typename Tsr, typename Tfr>
+    Status transaction(Tc &conditions, 
+                       Tsr &successRequests,
+                       Tfr &failureRequests) {
         
         ClientContext context;
         TxnRequest txnRequest;
-        TxnResponse txnResponse;
-
-        //  RangeRequest getRequest;
-        std::unique_ptr<RangeRequest> getRequest(new RangeRequest());
- 
-        // add compare object to Txn
-        auto compare = txnRequest.add_compare();
-        compare->set_result(etcdserverpb::Compare_CompareResult_EQUAL); 
-        compare->set_target(etcdserverpb::Compare_CompareTarget_VALUE);
-        compare->set_key(key);
-        compare->set_value(value);
-       
-        //add success object to Txn 
-        auto success = txnRequest.add_success();
-
-        getRequest->set_key(key);
-        success->set_allocated_request_range(getRequest.release());
-        Status getStatus = m_kvStub->Txn(&context, txnRequest , &txnResponse);
-     
-        for(auto resp: txnResponse.responses()){
-            for(auto kvs_items: resp.response_range().kvs()){
-                std::cerr << kvs_items.key() << 
-                      ":" << kvs_items.value() << std::endl;
-            }                
-        }
-        return getStatus;
-    }
     
-template <typename Tr, typename Tnx>
-auto addRequest(Tr & request, Tnx & transaction ){
-        auto success = transaction.add_success();
-
-
-        std::unique_ptr<RangeRequest> getRequest(new RangeRequest());
-        getRequest->set_key(request.key());
-        success->set_allocated_request_range(getRequest.release());
-}
-
-
-//    template <typename Tc, typename Tsr, typename Tfr>
-    Status transaction(std::list<Condition> &conditions, 
-                       std::list<Request> &successRequests,
-                       std::list<Request> &failureRequests) {
-        
-        ClientContext context;
-        TxnRequest txnRequest;
-        TxnResponse txnResponse;
-        
-        //  RangeRequest getRequest;
-        std::unique_ptr<RangeRequest> getRequest(new RangeRequest());
-    
+        // add all conditions    
         for(auto condition: conditions){
-            //add conditions    
             auto compare = txnRequest.add_compare();
             compare->set_target (condition.comparison());
             compare->set_result (condition.operation()); 
             compare->set_key    (condition.key());
             compare->set_value  (condition.value());
         }   
+        // add on sucess requests    
         for(auto successRequest: successRequests){
-            //add success request 
-             addRequest(successRequest, txnRequest); 
-            //auto success = txnRequest.add_success();
-            //add request depending on Request.operation
-            //getRequest->set_key(successRequest.key());
-            //success->set_allocated_request_range(getRequest.release());
+             auto success = txnRequest.add_success();
+             addRequest(successRequest, success); 
         }   
+        // add on failure requests    
         for(auto failureRequest: failureRequests){
-            //add failure request 
             auto failure = txnRequest.add_failure();
-            //add request depending on Request.operation 
-            //getRequest->set_key(successRequest.key());
+            addRequest(failureRequest, failure); 
         }   
+       
+        // send transaction 
+        Status stat = m_kvStub->Txn(&context, txnRequest , &m_txnResponse);
         
-        Status stat = m_kvStub->Txn(&context, txnRequest , &txnResponse);
-        for(auto resp: txnResponse.responses()){
-           for(auto kvs_items: resp.response_range().kvs()){
-                std::cerr << kvs_items.key() << 
-                      ":" << kvs_items.value() << std::endl;
-            }                
-        }
-    
         return stat; 
+    }
+    
+    template <typename Tc, typename Tsr, typename Tfr, typename Cb>
+    Status transaction(Tc &conditions, 
+                       Tsr &successRequests,
+                       Tfr &failureRequests, Cb callback) {
+        Status stat = transaction(conditions,successRequests,failureRequests);
+        callback(m_txnResponse);
+        return stat;
     }
 
 private:
+    
+    template <typename Tr, typename Tsf>
+    bool addRequest(Tr & request, Tsf success_failure){
 
+        if(request.request_case() == "get"){ 
+            std::unique_ptr<RangeRequest> getRequest(new RangeRequest());
+            getRequest->set_key(request.key());
+            success_failure->set_allocated_request_range(getRequest.release());
+            return true;
+        } else
+        if(request.request_case() == "put"){ 
+            std::unique_ptr<PutRequest> putRequest(new PutRequest());
+            putRequest->set_key(request.key());
+            putRequest->set_value(request.value());
+            success_failure->set_allocated_request_put(putRequest.release());
+
+        } else 
+        if(request.request_case() == "del"){ 
+            std::unique_ptr<DeleteRangeRequest> deleteRequest(new DeleteRangeRequest());
+            deleteRequest->set_key(request.key());
+            success_failure->set_allocated_request_delete_range(deleteRequest.release());
+        }
+        return false;
+    }
 
     std::unique_ptr<KV::Stub> m_kvStub;
     std::unique_ptr<Watch::Stub> m_watchStub;
     std::unique_ptr<Lease::Stub> m_leaseStub;
+    // todo maybe move transactions to different class alltogether??    
+    TxnResponse m_txnResponse;
 
 };
 #endif

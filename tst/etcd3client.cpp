@@ -46,11 +46,6 @@ int main() {
     //                                                          << std::endl;
     //   } 
     //);
-   
-    //Conditions<std::list> conditions;
-    //conditions.add("create", "foo", "There6");
-
-   
      
     std::list<Request> sreqs;
     std::list<Request> freqs;
@@ -61,18 +56,30 @@ int main() {
     conditions.push_back(con1);
     //conditions.push_back(con2);
 
-    Request req1("put", "foo3", "value1");
-    //Operation op2("get", "key2");
+    Request req1("get", "foo3", "value1");
+    Request req2("get", "foo2", "value1");
+    Request req3("put", "newfoo1", "value1");
+
     sreqs.push_back(req1);
-   // sreqs.push_back(op2);
-   // freqs.push_back(req1);
-   // freqs.push_back(op2);
+    sreqs.push_back(req2);
+    sreqs.push_back(req3);
+    freqs.push_back(req1);
+
 
     Status s = oClient.transaction(conditions, sreqs, freqs); 
     if(s.ok()){
         std::cerr << "ok" << s.error_code() << ":" << s.error_message() << std::endl;
     } else {
         std::cerr << s.error_code() << ":" << s.error_message() << std::endl;
-   }
-
+    }
+    
+    // Getting the responses through a callback 
+    oClient.transaction(conditions, sreqs, freqs, [](auto r) {
+        for(auto resp: r.responses()){
+           for(auto kvs_items: resp.response_range().kvs()){
+                std::cerr << kvs_items.key() << 
+                      ":" << kvs_items.value() << std::endl;
+            }                
+        }
+    }); 
 }
