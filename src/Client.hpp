@@ -1,6 +1,8 @@
 #ifndef ETCDV3_CLIENT
 #define ETCDV3_CLIENT
 
+#include "Condition.hpp"
+#include "Request.hpp"
 #include "rpc.grpc.pb.h"
 
 #include <grpc++/grpc++.h>
@@ -221,8 +223,66 @@ public:
         }
         return getStatus;
     }
+    
+template <typename Tr, typename Tnx>
+auto addRequest(Tr & request, Tnx & transaction ){
+        auto success = transaction.add_success();
+
+
+        std::unique_ptr<RangeRequest> getRequest(new RangeRequest());
+        getRequest->set_key(request.key());
+        success->set_allocated_request_range(getRequest.release());
+}
+
+
+//    template <typename Tc, typename Tsr, typename Tfr>
+    Status transaction(std::list<Condition> &conditions, 
+                       std::list<Request> &successRequests,
+                       std::list<Request> &failureRequests) {
+        
+        ClientContext context;
+        TxnRequest txnRequest;
+        TxnResponse txnResponse;
+        
+        //  RangeRequest getRequest;
+        std::unique_ptr<RangeRequest> getRequest(new RangeRequest());
+    
+        for(auto condition: conditions){
+            //add conditions    
+            auto compare = txnRequest.add_compare();
+            compare->set_target (condition.comparison());
+            compare->set_result (condition.operation()); 
+            compare->set_key    (condition.key());
+            compare->set_value  (condition.value());
+        }   
+        for(auto successRequest: successRequests){
+            //add success request 
+             addRequest(successRequest, txnRequest); 
+            //auto success = txnRequest.add_success();
+            //add request depending on Request.operation
+            //getRequest->set_key(successRequest.key());
+            //success->set_allocated_request_range(getRequest.release());
+        }   
+        for(auto failureRequest: failureRequests){
+            //add failure request 
+            auto failure = txnRequest.add_failure();
+            //add request depending on Request.operation 
+            //getRequest->set_key(successRequest.key());
+        }   
+        
+        Status stat = m_kvStub->Txn(&context, txnRequest , &txnResponse);
+        for(auto resp: txnResponse.responses()){
+           for(auto kvs_items: resp.response_range().kvs()){
+                std::cerr << kvs_items.key() << 
+                      ":" << kvs_items.value() << std::endl;
+            }                
+        }
+    
+        return stat; 
+    }
 
 private:
+
 
     std::unique_ptr<KV::Stub> m_kvStub;
     std::unique_ptr<Watch::Stub> m_watchStub;
