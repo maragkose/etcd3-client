@@ -35,101 +35,80 @@ public:
     explicit Client(std::shared_ptr<Channel> channel)
     : m_kvStub(KV::NewStub(channel)),
       m_watchStub(Watch::NewStub(channel)),
-      m_leaseStub(Lease::NewStub(channel)) 
+      m_leaseStub(Lease::NewStub(channel))
     {
     }
 
-    explicit Client(std::string address) 
-    : Client(grpc::CreateChannel(address, grpc::InsecureChannelCredentials())) 
+    explicit Client(std::string address)
+    : Client(grpc::CreateChannel(address, grpc::InsecureChannelCredentials()))
     {
     }
-    
+
     Status put(const std::string &key, const std::string &value){
-        
+
         ClientContext context;
         PutResponse put_response;
- 
+
         std::unique_ptr<PutRequest> put_request(new PutRequest());
-        put_request->set_key(key);   
-        put_request->set_value(value);   
+        put_request->set_key(key);
+        put_request->set_value(value);
         put_request->set_prev_kv(false);
-        Status putStatus = m_kvStub->Put(&context, *(put_request.get()), &put_response); 
-        return putStatus; 
+        Status putStatus = m_kvStub->Put(&context, *(put_request.get()), &put_response);
+        return putStatus;
     }
-    
+
     Status put(const std::string &key, const std::string &value, std::pair<std::string, std::string> &prevKV) {
-        
+
         ClientContext context;
         PutResponse put_response;
- 
+
         std::unique_ptr<PutRequest> put_request(new PutRequest());
-        put_request->set_key(key);   
-        put_request->set_value(value);   
+        put_request->set_key(key);
+        put_request->set_value(value);
         put_request->set_prev_kv(true);
         Status putStatus = m_kvStub->Put(&context, *(put_request.get()), &put_response);
-    
+
         prevKV.first = put_response.prev_kv().key();
         prevKV.first = put_response.prev_kv().value();
-        return putStatus; 
+        return putStatus;
     }
 
     Status put(const std::string &key, const std::string &value, int64_t lease){
-        
+
         ClientContext context;
         PutResponse put_response;
- 
+
         std::unique_ptr<PutRequest> put_request(new PutRequest());
-        put_request->set_key(key);   
-        put_request->set_value(value);   
+        put_request->set_key(key);
+        put_request->set_value(value);
         put_request->set_prev_kv(false);
         put_request->set_lease(lease);
-        Status putStatus = m_kvStub->Put(&context, *(put_request.get()), &put_response); 
-        return putStatus; 
+        Status putStatus = m_kvStub->Put(&context, *(put_request.get()), &put_response);
+        return putStatus;
     }
-    
+
     const std::string get(const std::string key){
-        
+
         ClientContext context;
         RangeRequest getRequest;
         RangeResponse getResponse;
-        
+
         getRequest.set_key(key);
-    
+
         Status getStatus = m_kvStub->Range(&context, getRequest , &getResponse);
-        
-        return getResponse.kvs(0).value();     
+
+        return getResponse.kvs(0).value();
     }
 
     Status getFromKey(const std::string key, std::map<std::string, std::string> & pairs) {
-        
+
         ClientContext context;
         RangeRequest getRequest;
         RangeResponse getResponse;
-        
+
         getRequest.set_key(key);
         getRequest.set_range_end("\0", 1);
- 
-        Status getStatus = m_kvStub->Range(&context, getRequest , &getResponse);
 
-        for(auto kv_item: getResponse.kvs()){
-            pairs[kv_item.key()] = kv_item.value();
-        }
-
-        return getStatus;
-    }     
-    
-    Status get(const std::string key, std::map<std::string, std::string> & pairs) {
-        
-        ClientContext context;
-        RangeRequest getRequest;
-        RangeResponse getResponse;
-        
-        getRequest.set_key(key);
-        std::string range_end (key); 
-        range_end.back()++;
-        
-        getRequest.set_range_end(range_end);
- 
         Status getStatus = m_kvStub->Range(&context, getRequest , &getResponse);
 
         for(auto kv_item: getResponse.kvs()){
@@ -138,19 +117,40 @@ public:
 
         return getStatus;
     }
-    
-    Status getKeys(const std::string key, std::vector<std::string> & keys) {
-        
+
+    Status get(const std::string key, std::map<std::string, std::string> & pairs) {
+
         ClientContext context;
         RangeRequest getRequest;
         RangeResponse getResponse;
-        
+
         getRequest.set_key(key);
-        std::string range_end (key); 
+        std::string range_end (key);
         range_end.back()++;
-        
+
         getRequest.set_range_end(range_end);
- 
+
+        Status getStatus = m_kvStub->Range(&context, getRequest , &getResponse);
+
+        for(auto kv_item: getResponse.kvs()){
+            pairs[kv_item.key()] = kv_item.value();
+        }
+
+        return getStatus;
+    }
+
+    Status getKeys(const std::string key, std::vector<std::string> & keys) {
+
+        ClientContext context;
+        RangeRequest getRequest;
+        RangeResponse getResponse;
+
+        getRequest.set_key(key);
+        std::string range_end (key);
+        range_end.back()++;
+
+        getRequest.set_range_end(range_end);
+
         Status getStatus = m_kvStub->Range(&context, getRequest , &getResponse);
 
         for(auto kv_item: getResponse.kvs()){
@@ -159,14 +159,42 @@ public:
 
         return getStatus;
     }
-   
-    template <typename T> 
+
+    void updateLease(uint64_t leaseId) {
+
+        ClientContext context;
+        etcdserverpb::LeaseKeepAliveRequest leaseKeepAliveRequest;
+        etcdserverpb::LeaseKeepAliveResponse leaseKeepAliveResponse;
+
+
+        auto stream = m_leaseStub->LeaseKeepAlive(&context);
+
+        leaseKeepAliveRequest.set_id(leaseId);
+        stream->Write(leaseKeepAliveRequest);
+        stream->Read(&leaseKeepAliveResponse);
+    }
+
+    Status createLease(uint64_t leaseId, uint64_t ttl) {
+
+        ClientContext context;
+        etcdserverpb::LeaseGrantRequest createLeaseRequest;
+        etcdserverpb::LeaseGrantResponse createLeaseResponse;
+
+        createLeaseRequest.set_id(leaseId);
+        createLeaseRequest.set_ttl(ttl);
+
+        Status createLeaseStatus = m_leaseStub->LeaseGrant(&context, createLeaseRequest, &createLeaseResponse);
+
+        return createLeaseStatus;
+    }
+
+    template <typename T>
     void watch(const std::string key, T callback) {
-        
+
         ClientContext context;
         WatchRequest watchRequest;
         CompletionQueue cq_;
-    
+
         WatchResponse watchResponse;
 
         watchRequest.mutable_create_request()->set_key(key);
@@ -174,7 +202,7 @@ public:
 
         stream->Write(watchRequest);
         stream->Read(&watchResponse);
-    
+
         while(true){
 
             bool op = stream->Read(&watchResponse);
@@ -191,42 +219,42 @@ public:
             }
         }
     }
-   
+
     template <typename Tc, typename Tsr, typename Tfr>
-    Status transaction(Tc &conditions, 
+    Status transaction(Tc &conditions,
                        Tsr &successRequests,
                        Tfr &failureRequests) {
-        
+
         ClientContext context;
         TxnRequest txnRequest;
-    
-        // add all conditions    
+
+        // add all conditions
         for(auto condition: conditions){
             auto compare = txnRequest.add_compare();
             compare->set_target (condition.comparison());
-            compare->set_result (condition.operation()); 
+            compare->set_result (condition.operation());
             compare->set_key    (condition.key());
             compare->set_value  (condition.value());
-        }   
-        // add on sucess requests    
+        }
+        // add on sucess requests
         for(auto successRequest: successRequests){
              auto success = txnRequest.add_success();
-             addRequest(successRequest, success); 
-        }   
-        // add on failure requests    
+             addRequest(successRequest, success);
+        }
+        // add on failure requests
         for(auto failureRequest: failureRequests){
             auto failure = txnRequest.add_failure();
-            addRequest(failureRequest, failure); 
-        }   
-       
-        // send transaction 
+            addRequest(failureRequest, failure);
+        }
+
+        // send transaction
         Status stat = m_kvStub->Txn(&context, txnRequest , &m_txnResponse);
-        
-        return stat; 
+
+        return stat;
     }
-    
+
     template <typename Tc, typename Tsr, typename Tfr, typename Cb>
-    Status transaction(Tc &conditions, 
+    Status transaction(Tc &conditions,
                        Tsr &successRequests,
                        Tfr &failureRequests, Cb callback) {
         Status stat = transaction(conditions,successRequests,failureRequests);
@@ -235,24 +263,24 @@ public:
     }
 
 private:
-    
+
     template <typename Tr, typename Tsf>
     bool addRequest(Tr & request, Tsf success_failure){
 
-        if(request.request_case() == "get"){ 
+        if(request.request_case() == "get"){
             std::unique_ptr<RangeRequest> getRequest(new RangeRequest());
             getRequest->set_key(request.key());
             success_failure->set_allocated_request_range(getRequest.release());
             return true;
         } else
-        if(request.request_case() == "put"){ 
+        if(request.request_case() == "put"){
             std::unique_ptr<PutRequest> putRequest(new PutRequest());
             putRequest->set_key(request.key());
             putRequest->set_value(request.value());
             success_failure->set_allocated_request_put(putRequest.release());
 
-        } else 
-        if(request.request_case() == "del"){ 
+        } else
+        if(request.request_case() == "del"){
             std::unique_ptr<DeleteRangeRequest> deleteRequest(new DeleteRangeRequest());
             deleteRequest->set_key(request.key());
             success_failure->set_allocated_request_delete_range(deleteRequest.release());
@@ -263,7 +291,7 @@ private:
     std::unique_ptr<KV::Stub> m_kvStub;
     std::unique_ptr<Watch::Stub> m_watchStub;
     std::unique_ptr<Lease::Stub> m_leaseStub;
-    // todo maybe move transactions to different class alltogether??    
+    // todo maybe move transactions to different class alltogether??
     TxnResponse m_txnResponse;
 
 };
