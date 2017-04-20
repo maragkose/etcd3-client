@@ -227,6 +227,7 @@ public:
 
         ClientContext context;
         TxnRequest txnRequest;
+        TxnResponse txnResponse;
 
         // add all conditions
         for(auto condition: conditions){
@@ -248,8 +249,7 @@ public:
         }
 
         // send transaction
-        Status stat = m_kvStub->Txn(&context, txnRequest , &m_txnResponse);
-
+        Status stat = m_kvStub->Txn(&context, txnRequest , &txnResponse);
         return stat;
     }
 
@@ -257,8 +257,33 @@ public:
     Status transaction(Tc &conditions,
                        Tsr &successRequests,
                        Tfr &failureRequests, Cb callback) {
-        Status stat = transaction(conditions,successRequests,failureRequests);
-        callback(m_txnResponse);
+        ClientContext context;
+        TxnRequest txnRequest;
+        TxnResponse txnResponse;
+        // todo : refactor both trnsaction calls and remove dupolicate code... 
+        // add all conditions
+        for(auto condition: conditions){
+            auto compare = txnRequest.add_compare();
+            compare->set_target (condition.comparison());
+            compare->set_result (condition.operation());
+            compare->set_key    (condition.key());
+            compare->set_value  (condition.value());
+        }
+        // add on sucess requests
+        for(auto successRequest: successRequests){
+             auto success = txnRequest.add_success();
+             addRequest(successRequest, success);
+        }
+        // add on failure requests
+        for(auto failureRequest: failureRequests){
+            auto failure = txnRequest.add_failure();
+            addRequest(failureRequest, failure);
+        }
+
+        // send transaction
+        Status stat = m_kvStub->Txn(&context, txnRequest , &txnResponse);
+
+        callback(txnResponse, txnResponse.succeeded());
         return stat;
     }
 
@@ -292,7 +317,6 @@ private:
     std::unique_ptr<Watch::Stub> m_watchStub;
     std::unique_ptr<Lease::Stub> m_leaseStub;
     // todo maybe move transactions to different class alltogether??
-    TxnResponse m_txnResponse;
 
 };
 #endif

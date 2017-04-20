@@ -88,7 +88,8 @@ int main() {
     }
     
     // Getting the responses through a callback 
-    oClient.transaction(conditions, sreqs, freqs, [](auto r) {
+    Status ts = oClient.transaction(conditions, sreqs, freqs, [](auto r, bool isConditionSuccess) {
+        std::cerr << "The transaction condition was :" << isConditionSuccess << std::endl; 
         for(auto resp: r.responses()){
            for(auto kvs_items: resp.response_range().kvs()){
                 std::cerr << kvs_items.key() << 
