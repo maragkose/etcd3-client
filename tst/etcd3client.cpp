@@ -13,13 +13,14 @@ int main() {
 
     Client oClient("localhost:2379");
 
-    std::pair <std::string, std::string> pair;
     
     oClient.put("NewKey", "etcd!!");
-
+    
+    std::cout << oClient.get("foo1") << std::endl;
     //oClient.put("foo1", "bar1");
     //oClient.put("foo2", "bar2");
     //oClient.put("foo3", "bar3");
+    std::pair <std::string, std::string> pair;
     //oClient.put("foo3", "bar3", pair);
     //std::cout << "foo3 previous[key:value]: "<< pair.first << ":"<< pair.second << std::endl; 
     //std::cout << oClient.get("Hallo") <<std::endl;
