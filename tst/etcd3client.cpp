@@ -2,6 +2,13 @@
 #include "Condition.hpp"
 #include "Request.hpp"
 
+#include <thread>
+
+template<typename T>
+void do_stuff(T events) {
+    std::cout << "Do stuff called" << std::endl;
+}
+
 int main() {
 
     Client oClient("localhost:2379");
@@ -9,6 +16,7 @@ int main() {
     std::pair <std::string, std::string> pair;
     
     oClient.put("NewKey", "etcd!!");
+
     //oClient.put("foo1", "bar1");
     //oClient.put("foo2", "bar2");
     //oClient.put("foo3", "bar3");
@@ -46,25 +54,30 @@ int main() {
     //                                                          << std::endl;
     //   } 
     //);
-     
+  
+    //std::thread t([&oClient]{ oClient.watch("NewThread",  
+    //    [](auto e){ 
+    //        do_stuff(e); 
+    //    }); 
+    //});
+    //t.join();
+ 
+    // Creating conditions/requests lists 
     std::list<Request> sreqs;
     std::list<Request> freqs;
     std::list<Condition> conditions;
 
     Condition con1("create", "foo", "There6");
-    //Condition con2("mod", ">", "key2", "0");
     conditions.push_back(con1);
-    //conditions.push_back(con2);
 
     Request req1("get", "foo3", "value1");
     Request req2("get", "foo2", "value1");
-    Request req3("put", "newfoo1", "value1");
-
+    Request req3("put", "newfoo2", "value1");
     sreqs.push_back(req1);
     sreqs.push_back(req2);
     sreqs.push_back(req3);
-    freqs.push_back(req1);
 
+    freqs.push_back(req1);
 
     Status s = oClient.transaction(conditions, sreqs, freqs); 
     if(s.ok()){
@@ -81,5 +94,7 @@ int main() {
                       ":" << kvs_items.value() << std::endl;
             }                
         }
-    }); 
+    });
+
+     
 }

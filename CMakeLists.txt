@@ -120,18 +120,23 @@ include_directories(${CMAKE_CURRENT_BINARY_DIR}
 add_library(etcd3cppapi SHARED ${CC_FILES} 
                                ${H_FILES} 
                                rpc.grpc.pb.cc 
-                               rpc.grpc.pb.h  
-                               src/Client.cpp)
+                               rpc.grpc.pb.h)
 
-target_link_libraries(etcd3cppapi ${GRPC++_LIBRARY} ${PROTOBUF_LIBRARY})
+target_link_libraries(etcd3cppapi pthread ${GRPC++_LIBRARY} ${PROTOBUF_LIBRARY})
 
 add_executable(etcd3client  
                            rpc.grpc.pb.cc 
                            rpc.grpc.pb.h  
-                           src/Client.cpp
                            tst/etcd3client.cpp)
 add_dependencies(etcd3client etcd3cppapi)
 target_link_libraries(etcd3client etcd3cppapi)
+
+add_executable(testcases  
+                           rpc.grpc.pb.cc 
+                           rpc.grpc.pb.h  
+                           tst/testcases.cpp)
+add_dependencies(testcases  etcd3cppapi)
+target_link_libraries(testcases  etcd3cppapi)
 
 
 
