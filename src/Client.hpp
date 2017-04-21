@@ -192,9 +192,9 @@ public:
     void watch(const std::string key, T callback) {
 
         ClientContext context;
-        WatchRequest watchRequest;
         CompletionQueue cq_;
-
+        
+        WatchRequest watchRequest;
         WatchResponse watchResponse;
 
         watchRequest.mutable_create_request()->set_key(key);
@@ -204,20 +204,24 @@ public:
         stream->Read(&watchResponse);
 
         while(true){
-
             bool op = stream->Read(&watchResponse);
-
-            // event is of type:  mvccpb::Event
-            for(auto event: watchResponse.events()){
-                std::cerr << "Reveived watch_response event.type() = "<< event.type() << std::endl;
-                callback(event);
-            }
-
             if(!op){
-                std::cerr << "Lost connection with stream..."<< std::endl;
+                std::cerr << "Connection with stream ended..."<< std::endl;
                 break;
             }
+            callback(stream, watchResponse);
         }
+    }
+    bool watchCancel(auto& stream, const int64_t watch_id) {
+
+        WatchRequest watchRequest;
+        WatchResponse watchResponse;
+
+        watchRequest.mutable_cancel_request()->set_watch_id(watch_id);
+        auto status = stream->Write(watchRequest);
+        stream->Read(&watchResponse);
+        
+        return status;
     }
 
     template <typename Tc, typename Tsr, typename Tfr>

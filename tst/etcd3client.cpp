@@ -41,20 +41,28 @@ int main() {
     //for(auto item: res3){ std::cout << item << std::endl; }
     //std::cout << "===================================="<<std::endl; 
 
-    //Status s = oClient.txn("foo", "There6");
-    //if(s.ok()){
-    //    std::cerr << "ok" << s.error_code() << ":" << s.error_message() << std::endl;
-    //} else {
-    //    std::cerr << s.error_code() << ":" << s.error_message() << std::endl;
-  // }
-
-    //oClient.watch("NewKey", 
-    //    [](auto event){ std::cout << "Rcvd:" << event.type()  << ":" 
-    //                                                          << event.kv().key() << "-"
-    //                                                          << event.kv().value() 
-    //                                                          << std::endl;
-    //   } 
-    //);
+    oClient.watch("NewKey", 
+        [&](auto &stream, auto resp){ 
+            std::cout << "Rcvd:" 
+                      << resp.watch_id() 
+                      << ","  
+                      << resp.canceled()
+                      <<std::endl;
+            for(auto event: resp.events()){
+                std::cout << 
+                event.kv().key() <<  ":" <<  
+                event.kv().value()<< std::endl;
+            }
+            
+            oClient.watchCancel(stream, resp.watch_id());
+            std::cout << "Canceled:" 
+                      << resp.watch_id() 
+                     << ","
+                      << resp.canceled() << std::endl;
+            stream->WritesDone();
+            stream->Finish();
+       } 
+    );
   
     //std::thread t([&oClient]{ oClient.watch("NewThread",  
     //    [](auto e){ 
