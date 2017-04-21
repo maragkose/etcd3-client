@@ -23,7 +23,27 @@ public:
     {
     }
     ~Request(){} 
-    
+
+    void populate(auto success_failure){
+
+        if(request_case() == "get"){
+            std::unique_ptr<RangeRequest> getRequest(new RangeRequest());
+            getRequest->set_key(key());
+            success_failure->set_allocated_request_range(getRequest.release());
+        } else
+        if(request_case() == "put"){
+            std::unique_ptr<PutRequest> putRequest(new PutRequest());
+            putRequest->set_key(key());
+            putRequest->set_value(value());
+            success_failure->set_allocated_request_put(putRequest.release());
+        } else
+        if(request_case() == "del"){
+            std::unique_ptr<DeleteRangeRequest> deleteRequest(new DeleteRangeRequest());
+            deleteRequest->set_key(key());
+            success_failure->set_allocated_request_delete_range(deleteRequest.release());
+        }
+    }
+
     std::string key() {
         return m_key;
     }

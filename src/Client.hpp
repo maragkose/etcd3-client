@@ -257,31 +257,8 @@ public:
 
 private:
 
-    template <typename Tr, typename Tsf>
-    bool addRequest(Tr & request, Tsf success_failure){
-
-        if(request.request_case() == "get"){
-            std::unique_ptr<RangeRequest> getRequest(new RangeRequest());
-            getRequest->set_key(request.key());
-            success_failure->set_allocated_request_range(getRequest.release());
-            return true;
-        } else
-        if(request.request_case() == "put"){
-            std::unique_ptr<PutRequest> putRequest(new PutRequest());
-            putRequest->set_key(request.key());
-            putRequest->set_value(request.value());
-            success_failure->set_allocated_request_put(putRequest.release());
-
-        } else
-        if(request.request_case() == "del"){
-            std::unique_ptr<DeleteRangeRequest> deleteRequest(new DeleteRangeRequest());
-            deleteRequest->set_key(request.key());
-            success_failure->set_allocated_request_delete_range(deleteRequest.release());
-        }
-        return false;
-    }
-
     void addConditions(auto conditions, auto txnRequest){
+        
         for(auto condition: conditions){
             auto compare = txnRequest->add_compare();
             condition.populate(compare);
@@ -289,15 +266,14 @@ private:
     }
     void addRequests(auto successRequests, auto failureRequests, auto txnRequest){
         
-        // add on success requests 
         for(auto successRequest: successRequests){
              auto success = txnRequest->add_success();
-             addRequest(successRequest, success);
+             successRequest.populate(success); 
         }
-        // add on failure requests
+        
         for(auto failureRequest: failureRequests){
             auto failure = txnRequest->add_failure();
-            addRequest(failureRequest, failure);
+            failureRequest.populate(failure); 
         }
     } 
     std::unique_ptr<KV::Stub> m_kvStub;
