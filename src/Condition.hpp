@@ -9,21 +9,54 @@ public:
 
     Condition(std::string comparison, std::string op, std::string key, std::string val ) :
         m_comparison(comparison),
-        m_operation(op),
         m_key(key),
         m_value(val)
     {
+        assert(comparison == "value");
     }
-    Condition(std::string comparison, std::string op, std::string key) :
+    Condition(std::string comparison, std::string op, std::string key, uint64_t val ) :
         m_comparison(comparison),
-        m_operation(op),
         m_key(key)
+    {
+        assert(comparison == "modify" || comparison == "version");
+
+        if(comparison == "modify"){
+            m_modifyRevision = val;
+        } else 
+        if(comparison == "version"){
+            m_version = val;
+        }    
+    }
+    Condition(std::string comparison, std::string key, uint64_t createRevision) :
+        m_comparison(comparison),
+        m_key(key),
+        m_createRevision(createRevision)
     {
         assert((comparison == "create"));
     }
 
     ~Condition(){};
-   
+  
+    void populate(auto compare){
+
+        compare->set_key(m_key);
+        compare->set_target(comparison());
+        compare->set_result (operation());
+
+        if(m_comparison == "create"){
+            compare->set_create_revision(m_createRevision);
+        } else
+        if(m_comparison == "modify"){
+            compare->set_mod_revision(m_modifyRevision);
+        } else
+        if(m_comparison == "value"){
+            compare->set_value  (m_value);
+        } else 
+        if(m_comparison == "version"){
+            compare->set_version(m_version);
+        }    
+    } 
+
 private:
  
     auto mapComparisonTarget() {
@@ -62,8 +95,9 @@ private:
     std::string m_operation;
     std::string m_key;
     std::string m_value;
-
-
+    uint64_t m_revision;
+    uint64_t m_version;
+    uint64_t m_createRevision;
+    uint64_t m_modifyRevision;
 };
-
 #endif

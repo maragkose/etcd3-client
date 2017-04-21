@@ -228,27 +228,10 @@ public:
         ClientContext context;
         TxnRequest txnRequest;
         TxnResponse txnResponse;
+        
+        addConditions(conditions, &txnRequest);
+        addRequests(successRequests, failureRequests, &txnRequest);
 
-        // add all conditions
-        for(auto condition: conditions){
-            auto compare = txnRequest.add_compare();
-            compare->set_target (condition.comparison());
-            compare->set_result (condition.operation());
-            compare->set_key    (condition.key());
-            compare->set_value  (condition.value());
-        }
-        // add on sucess requests
-        for(auto successRequest: successRequests){
-             auto success = txnRequest.add_success();
-             addRequest(successRequest, success);
-        }
-        // add on failure requests
-        for(auto failureRequest: failureRequests){
-            auto failure = txnRequest.add_failure();
-            addRequest(failureRequest, failure);
-        }
-
-        // send transaction
         Status stat = m_kvStub->Txn(&context, txnRequest , &txnResponse);
         return stat;
     }
@@ -257,33 +240,18 @@ public:
     Status transaction(Tc &conditions,
                        Tsr &successRequests,
                        Tfr &failureRequests, Cb callback) {
+
         ClientContext context;
         TxnRequest txnRequest;
         TxnResponse txnResponse;
-        // todo : refactor both trnsaction calls and remove dupolicate code... 
-        // add all conditions
-        for(auto condition: conditions){
-            auto compare = txnRequest.add_compare();
-            compare->set_target (condition.comparison());
-            compare->set_result (condition.operation());
-            compare->set_key    (condition.key());
-            compare->set_value  (condition.value());
-        }
-        // add on sucess requests
-        for(auto successRequest: successRequests){
-             auto success = txnRequest.add_success();
-             addRequest(successRequest, success);
-        }
-        // add on failure requests
-        for(auto failureRequest: failureRequests){
-            auto failure = txnRequest.add_failure();
-            addRequest(failureRequest, failure);
-        }
+        
+        addConditions(conditions, &txnRequest);
+        addRequests(successRequests, failureRequests, &txnRequest);
 
-        // send transaction
         Status stat = m_kvStub->Txn(&context, txnRequest , &txnResponse);
 
         callback(txnResponse, txnResponse.succeeded());
+        
         return stat;
     }
 
@@ -313,6 +281,25 @@ private:
         return false;
     }
 
+    void addConditions(auto conditions, auto txnRequest){
+        for(auto condition: conditions){
+            auto compare = txnRequest->add_compare();
+            condition.populate(compare);
+        }
+    }
+    void addRequests(auto successRequests, auto failureRequests, auto txnRequest){
+        
+        // add on success requests 
+        for(auto successRequest: successRequests){
+             auto success = txnRequest->add_success();
+             addRequest(successRequest, success);
+        }
+        // add on failure requests
+        for(auto failureRequest: failureRequests){
+            auto failure = txnRequest->add_failure();
+            addRequest(failureRequest, failure);
+        }
+    } 
     std::unique_ptr<KV::Stub> m_kvStub;
     std::unique_ptr<Watch::Stub> m_watchStub;
     std::unique_ptr<Lease::Stub> m_leaseStub;
