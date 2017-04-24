@@ -179,19 +179,6 @@ public:
         }
     }
 
-    void updateLease(uint64_t leaseId) {
-
-        ClientContext context;
-        etcdserverpb::LeaseKeepAliveRequest leaseKeepAliveRequest;
-        etcdserverpb::LeaseKeepAliveResponse leaseKeepAliveResponse;
-
-
-        auto stream = m_leaseStub->LeaseKeepAlive(&context);
-
-        leaseKeepAliveRequest.set_id(leaseId);
-        stream->Write(leaseKeepAliveRequest);
-        stream->Read(&leaseKeepAliveResponse);
-    }
 
     Status createLease(uint64_t leaseId, uint64_t ttl) {
 
@@ -205,6 +192,20 @@ public:
         Status createLeaseStatus = m_leaseStub->LeaseGrant(&context, createLeaseRequest, &createLeaseResponse);
 
         return createLeaseStatus;
+    }
+
+    void updateLease(uint64_t leaseId) {
+
+        ClientContext context;
+        etcdserverpb::LeaseKeepAliveRequest leaseKeepAliveRequest;
+        etcdserverpb::LeaseKeepAliveResponse leaseKeepAliveResponse;
+
+
+        auto stream = m_leaseStub->LeaseKeepAlive(&context);
+
+        leaseKeepAliveRequest.set_id(leaseId);
+        stream->Write(leaseKeepAliveRequest);
+        stream->Read(&leaseKeepAliveResponse);
     }
 
     template <typename T>
