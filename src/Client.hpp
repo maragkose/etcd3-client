@@ -286,7 +286,6 @@ private:
     std::unique_ptr<KV::Stub> m_kvStub;
     std::unique_ptr<Watch::Stub> m_watchStub;
     std::unique_ptr<Lease::Stub> m_leaseStub;
-    // todo maybe move transactions to different class alltogether??
 
 };
 
