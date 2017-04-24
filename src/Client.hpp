@@ -15,6 +15,8 @@ using etcdserverpb::Watch;
 using etcdserverpb::Lease;
 using etcdserverpb::PutRequest;
 using etcdserverpb::PutResponse;
+using etcdserverpb::DeleteRangeRequest;
+using etcdserverpb::DeleteRangeResponse;
 using etcdserverpb::RangeRequest;
 using etcdserverpb::RangeResponse;
 using etcdserverpb::WatchRequest;
@@ -158,6 +160,23 @@ public:
         }
 
         return getStatus;
+    }
+    const std::string del(const std::string key){
+
+        ClientContext context;
+        DeleteRangeRequest delRequest;
+        DeleteRangeResponse delResponse;
+
+        delRequest.set_key(key);
+        delRequest.set_prev_kv(true);
+
+        Status status = m_kvStub->DeleteRange(&context, delRequest , &delResponse);
+        
+        if(delResponse.prev_kvs_size()) {
+            return delResponse.prev_kvs(0).value();
+        } else {
+            return "";
+        }
     }
 
     void updateLease(uint64_t leaseId) {

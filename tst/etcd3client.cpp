@@ -14,9 +14,9 @@ int main() {
     Client oClient("localhost:2379");
 
     
-    oClient.put("NewKey", "etcd!!");
-    
-    std::cout << oClient.get("foo1") << std::endl;
+    //oClient.put("SomeKey", "etcd!!");
+    std::cout << "Deleting" << oClient.del("SomeKey") << std::endl;
+    //std::cout << oClient.get("SomeKey") << std::endl;
     //oClient.put("foo1", "bar1");
     //oClient.put("foo2", "bar2");
     //oClient.put("foo3", "bar3");
@@ -99,15 +99,15 @@ int main() {
   //  }
     
     // Getting the responses through a callback 
-    Status ts = oClient.transaction(conditions, sreqs, freqs, [](auto r, bool isConditionSuccess) {
-        std::cerr << "The transaction condition was :" << isConditionSuccess << std::endl; 
-        for(auto resp: r.responses()){
-           for(auto kvs_items: resp.response_range().kvs()){
-                std::cerr << kvs_items.key() << 
-                      ":" << kvs_items.value() << std::endl;
-            }                
-        }
-    });
+    //Status ts = oClient.transaction(conditions, sreqs, freqs, [](auto r, bool isConditionSuccess) {
+    //    std::cerr << "The transaction condition was :" << isConditionSuccess << std::endl; 
+    //    for(auto resp: r.responses()){
+    //       for(auto kvs_items: resp.response_range().kvs()){
+    //            std::cerr << kvs_items.key() << 
+    //                  ":" << kvs_items.value() << std::endl;
+    //        }                
+    //    }
+    //});
 
      
 }
