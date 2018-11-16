@@ -59,7 +59,6 @@ file(MAKE_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/google/protobuf")
 set(SRC_PROTO_FILES 
     "protobuf_repo/gogoproto/gogo.proto"
     "googleapis_repo/google/api/http.proto"
-    "protobuf_repo/protobuf/google/protobuf/descriptor.proto"
     "googleapis_repo/google/api/annotations.proto"
     "etcd_repo/auth/authpb/auth.proto"
     "etcd_repo/mvcc/mvccpb/kv.proto"
@@ -68,7 +67,6 @@ set(SRC_PROTO_FILES
 set(DST_PROTO_FILES 
     "gogoproto/gogo.proto"
     "google/api/http.proto"
-    "google/protobuf/descriptor.proto"
     "google/api/annotations.proto"
     "etcd/auth/authpb/auth.proto"
     "etcd/mvcc/mvccpb/kv.proto"
@@ -124,12 +122,12 @@ add_library(etcd3cppapi SHARED ${CC_FILES}
 
 target_link_libraries(etcd3cppapi pthread ${GRPC++_LIBRARY} ${PROTOBUF_LIBRARY})
 
-add_executable(etcd3client  
+add_executable(watcher  
                            rpc.grpc.pb.cc 
                            rpc.grpc.pb.h  
-                           tst/etcd3client.cpp)
-add_dependencies(etcd3client etcd3cppapi)
-target_link_libraries(etcd3client etcd3cppapi)
+                           tst/watcher.cpp)
+add_dependencies(watcher etcd3cppapi)
+target_link_libraries(watcher etcd3cppapi)
 
 add_executable(testcases  
                            rpc.grpc.pb.cc 
