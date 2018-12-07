@@ -122,12 +122,19 @@ add_library(etcd3cppapi SHARED ${CC_FILES}
 
 target_link_libraries(etcd3cppapi pthread ${GRPC++_LIBRARY} ${PROTOBUF_LIBRARY})
 
-add_executable(watcher  
+add_executable(watcher_example_1 
                            rpc.grpc.pb.cc 
                            rpc.grpc.pb.h  
                            tst/watcher.cpp)
-add_dependencies(watcher etcd3cppapi)
-target_link_libraries(watcher etcd3cppapi)
+add_dependencies(watcher_example_1 etcd3cppapi)
+target_link_libraries(watcher_example_1 etcd3cppapi)
+
+add_executable(watcher_example_2 
+                           rpc.grpc.pb.cc 
+                           rpc.grpc.pb.h  
+                           tst/watcher.cpp)
+add_dependencies(watcher_example_2 etcd3cppapi)
+target_link_libraries(watcher_example_2 etcd3cppapi)
 
 add_executable(testcases  
                            rpc.grpc.pb.cc 

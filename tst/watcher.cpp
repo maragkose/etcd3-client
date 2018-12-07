@@ -5,18 +5,6 @@
 
 #include <thread>
 
-void receive(Watcher * oAsyncWatcher){
-
-      oAsyncWatcher->recv([&](auto resp)
-        {
-            for(auto event: resp.events()){
-                std::cout << 
-                event.kv().key() <<  ":" <<  
-                event.kv().value()<< std::endl;
-            }
-        });
-}
-
 int main() {
     
     Watcher oAsyncWatcher("localhost:2379");
@@ -28,25 +16,25 @@ int main() {
     std::cerr << "Setup 1st watch" << std::endl;
     oAsyncWatcher.async_watch("SomeKey", [](WatchResponse &res) {
         std::cerr << "Key1 changed!" <<std::endl;
+        for(auto event: res.events()){
+            std::cout << 
+            event.kv().key() <<  ":" <<  
+            event.kv().value()<< std::endl;
+        }
     }); 
     
     std::cerr << "Setup 2nd watch" << std::endl;
     oAsyncWatcher.async_watch("OtherKey", [](WatchResponse &res) { 
-      std::cerr << "Key2 changed!" <<std::endl;
+      std::cerr << "Key2 changed!" << std::endl;
+      for(auto event: res.events()){
+          std::cout << 
+          event.kv().key() <<  ":" <<  
+          event.kv().value()<< std::endl;
+      }
     }); 
  
-    
     //
-    // Setup receving of watcher events
-    //
-    std::thread watch_thread = std::thread([&](){ 
-        receive(&oAsyncWatcher);    
-    });
-    
-    //
-    // Run watcher loop and join thread
+    // Run watcher loop (blocks)
     //
     oAsyncWatcher.run();
-    watch_thread.join();
-     
 }

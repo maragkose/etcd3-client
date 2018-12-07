@@ -2,10 +2,12 @@
 #define WATHCER_HPP
 
 #include "rpc.grpc.pb.h"
+
 #include <typeinfo>
 #include <grpc++/grpc++.h>
 #include <grpc/support/log.h>
 #include <sstream>
+
 using grpc::Channel;
 using grpc::ClientContext;
 using etcdserverpb::KV;
@@ -42,6 +44,7 @@ public:
         }
         loop_cq();
     }
+
     void loop_cq() {
         void * got_tag;
         bool ok = false;
@@ -57,9 +60,11 @@ public:
                         auto cb = m_container[watcher_call->get_tag()];
                         cb(watcher_call->m_watchResponse);
                         watcher_call->m_stream->Read(&(watcher_call->m_watchResponse), got_tag);
+                        std::cerr << "Read request " << got_tag << std::endl;
                     }
             }
-        } // end while   
+        } // end while  
+        std::cerr<< "Exit loop_cq" << std::endl;
     }
     
     template <typename T>
@@ -70,6 +75,7 @@ public:
        
         while(m_completionQueue.Next(&got_tag, &ok)) {
             if(ok == false){
+                std::cerr << got_tag << ": false" << std::endl;
                 break;
             } else {
                 if(got_tag != (void*)2 && got_tag != (void*)1) {
@@ -128,11 +134,8 @@ private:
             bool ok;
             auto async_stream = m_watcher->m_watch_stub->AsyncWatch(&m_context, m_cq, (void*)2);
             m_stream = std::move(async_stream);
-            auto status = m_cq->Next(&got_tag, &ok);
+            /*auto status =*/ m_cq->Next(&got_tag, &ok);
             m_tag = static_cast<void*>(this);
-           // std::stringstream ss;
-           // ss << address;  
-           // m_tag = ss.str();
             std::cerr << "Ctor of AsyncWatcherCall ["<<m_tag<<"]"<< std::endl;
         }
 
@@ -147,9 +150,9 @@ private:
           
                 bool ok= false;
                 void * got_tag;
-                m_stream->Write(watchRequest, (void *)1);
+                m_stream->Write(watchRequest, (void *)m_tag);
                 auto status = m_cq->Next(&got_tag, &ok);
-                std::cerr << "Write ok and got_tag" << got_tag << ":" << status<<std::endl;
+                std::cerr << "Write ok and got_tag: " << got_tag << " : status: " << status<<std::endl;
         }
         void * get_tag() {
             return m_tag;
